@@ -12,3 +12,8 @@ class Influencer(models.Model):
     
     def message(self):
         return f'Hello from {self.name}'
+    
+    def picture_valid(self):
+        if 'http' in self.profile_picture:
+            return True
+        return False
