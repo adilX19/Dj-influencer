@@ -10,4 +10,5 @@ class Influencer(models.Model):
     def __str__(self):
         return self.handle
     
-    def 
+    def message(self):
+        return f'Hello from {self.name}'
