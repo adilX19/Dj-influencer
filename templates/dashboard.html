@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Influencer Scraper</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            background-color: #f8f9fa;
+            padding: 20px;
+            width: 250px;
+        }
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e9ecef;
+        }
+        .banner {
+            text-align: center;
+        }
+        .banner img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        #loader-container {
+            text-align: center;
+        }
+
+        .loader {
+            width: 40px;
+            aspect-ratio: 1;
+            color: #f03355;
+            position: relative;
+            background: radial-gradient(10px,currentColor 94%,#0000);
+        }
+        .loader:before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background:
+                radial-gradient(9px at bottom right,#0000 94%,currentColor) top    left,
+                radial-gradient(9px at bottom left ,#0000 94%,currentColor) top    right,
+                radial-gradient(9px at top    right,#0000 94%,currentColor) bottom left,
+                radial-gradient(9px at top    left ,#0000 94%,currentColor) bottom right;
+            background-size: 20px 20px;
+            background-repeat: no-repeat;
+            animation: l18 1.5s infinite cubic-bezier(0.3,1,0,1);
+        }
+        @keyframes l18 {
+            33%  {inset:-10px;transform: rotate(0deg)}
+            66%  {inset:-10px;transform: rotate(90deg)}
+            100% {inset:0    ;transform: rotate(90deg)}
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <form method="post" id="scrape-form">
+            {% csrf_token %}
+            <h3>Select Country</h3>
+            <div class="form-group">
+                <label for="countrySelect">Country Code</label>
+                <select class="form-control" name="country" id="countrySelect">
+                    <option value="us">United States (US)</option>
+                    <option value="ca">Canada (CA)</option>
+                    <option value="gb">United Kingdom (GB)</option>
+                    <option value="au">Australia (AU)</option>
+                    <option value="de">Germany (DE)</option>
+                    <option value="fr">France (FR)</option>
+                    <option value="in">India (IN)</option>
+                    <option value="jp">Japan (JP)</option>
+                    <option value="br">Brazil (BR)</option>
+                    <option value="za">South Africa (ZA)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-dark btn-block">Start Scrape</button>
+        </form>
+    </div>
+
+    <div class="main-content">
+
+        <div class="banner">
+
+            <div id="response" style="display: none;" class="alert alert-success alert-dismissible fade show" role="alert">
+                <span id="response-text"></span>
+            </div>
+
+            <div id="landing-page">
+                <h1>Welcome to TikTok Influencer Scraper</h1>
+                <p>Your tool for scraping TikTok influencer profiles from various countries.</p>
+                <img src="https://cdni.iconscout.com/illustration/premium/thumb/social-media-influencer-making-video-illustration-download-in-svg-png-gif-file-formats--blogger-logo-tiktok-creation-live-streaming-woman-using-pack-people-illustrations-8649936.png" alt="Illustration" />
+            </div>
+        </div>
+
+        <div id="loader-container" style="display: none;">
+            <div class="loader"></div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script type="text/javascript">
+
+        function openLoader() {
+            document.querySelector('#landing-page').style.display = 'none';
+            document.querySelector('#loader-container').style.display = 'block';
+        }
+
+        function closeLoader() {
+            document.querySelector('#loader-container').style.display = 'none';
+            document.querySelector('#landing-page').style.display = 'block';
+        } 
+
+        document.querySelector('#scrape-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            let url = `{{ request.build_absolute_uri }}start_scrape/`;
+
+            var xhr = new XMLHttpRequest();
+
+            openLoader()
+
+            xhr.open('POST', url, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+
+                    let results = JSON.parse(xhr.responseText);
+
+                    if (xhr.status === 200) {
+                        // Request was successful
+                        document.getElementById('response-text').textContent = 'Response: ' + results['message'];
+                    } else {
+                        // Handle error
+                        document.getElementById('response-text').textContent = 'Error: ' + results['message'];
+                    }
+                    event.target.reset(); // reset form field...
+
+                    document.querySelector('#response').style.display = 'block';
+
+                    setTimeout(() => {
+                        document.querySelector('#response').style.display = 'none';
+                        document.getElementById('response-text').textContent = '';
+                        closeLoader();
+                    }, 3000)
+                }
+            };
+            console.log("SELECTED REGION", event.target.country.value);
+            var data = { region: event.target.country.value };
+            xhr.send(JSON.stringify(data));
+        })
+
+    </script>
+</body>
+</html>
