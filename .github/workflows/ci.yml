@@ -1,27 +1,75 @@
-name: Production CI Pipline
+name: Django CI Pipeline
 
 on:
   push:
     branches:
       - main
+      - staging
+  pull_request:
+    branches:
+      - main
+      - staging
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: 🛠 Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v3
+      - name: 🐍 Set Up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
-      - name: Install Dependencies
+      - name: 📦 Install Dependencies
         run: |
+          python -m venv venv
+          source venv/bin/activate
           pip install -r requirements.txt
 
-      - name: Run Tests
+      - name: 🔍 Run Migrations
+        env:
+          DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db
         run: |
+          source venv/bin/activate
+          python manage.py migrate
+
+      - name: 🧪 Run Tests
+        env:
+          DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db
+        run: |
+          source venv/bin/activate
           python manage.py test
+
+      - name: 📦 Build Docker Image
+        run: |
+          docker build -t my-django-app .
+
+      - name: 🚀 Push Docker Image to Docker Hub (Optional)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker tag my-django-app ${{ secrets.DOCKER_USERNAME }}/my-django-app:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-django-app:latest
