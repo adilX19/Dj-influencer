@@ -17,7 +17,7 @@ class InfluencerTestCase(TestCase):
             name = 'Andleeb Riaz',
             followers = '12.M',
             likes = '12B',
-            profile_picture = 'scp://picture.from.tiktok.com/inssad'
+            profile_picture = 'http://picture.from.tiktok.com/inssad'
         )
 
 
